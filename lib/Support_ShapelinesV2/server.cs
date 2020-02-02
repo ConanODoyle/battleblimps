@@ -81,6 +81,20 @@ function createSphereMarker(%pos, %color, %scale)
 	return %shape;
 }
 
+function createCylinderMarker(%pos, %color, %scale)
+{
+	%shape = createBoxMarker(%pos, %color, %scale);
+	%shape.setShapeType("cylinder");
+	return %shape;
+}
+
+function createRingMarker(%pos, %color, %scale)
+{
+	%shape = createBoxMarker(%pos, %color, %scale);
+	%shape.setShapeType("ring");
+	return %shape;
+}
+
 function createBoxOutline(%boundingbox, %color, %scale)
 {
 	//assume its two opposite corners
