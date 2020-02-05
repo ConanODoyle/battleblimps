@@ -3,7 +3,35 @@ datablock PlayerData(BlimpArmor : PlayerStandardArmor)
 	shapeFile = "./blimp.dts";
 	uiName = "";
 
+	maxForwardSpeed = 4;
+	maxBackwardSpeed = 2;
+	maxSideSpeed = 0;
+
 	boundingBox = vectorScale("2 2 2.8", 4);
+};
+
+datablock PlayerData(ScoutBlimpArmor : BlimpArmor)
+{
+	shapeFile = "./scoutblimp.dts";
+	uiName = "";
+
+	maxForwardSpeed = 5;
+	maxBackwardSpeed = 3;
+	maxSideSpeed = 0;
+
+	boundingBox = vectorScale("1.5 1.5 2.8", 4);
+};
+
+datablock PlayerData(BuzzerPlaneArmor : BlimpArmor)
+{
+	shapeFile = "./buzzer.dts";
+	uiName = "";
+
+	maxForwardSpeed = 4;
+	maxBackwardSpeed = 2;
+	maxSideSpeed = 0;
+
+	boundingBox = vectorScale("1.3 1.3 1.5", 4);
 };
 
 if (!isObject(BlimpSimSet))
