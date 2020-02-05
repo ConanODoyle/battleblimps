@@ -51,7 +51,10 @@ function getBlimp()
 	%blimp.unhideNode("ship");
 	%blimp.unhideNode("mesh");
 	%blimp.unhideNode("ropes");
-	%blimp.unhideNode("")
+	%blimp.unhideNode("e_Sr_prop");
+	%blimp.unhideNode("e_Sl_prop");
+	%blimp.unhideNode("e_Sr");
+	%blimp.unhideNode("e_Sl");
 	$BlimpSimSet.add(%blimp);
 	return %blimp;
 }
