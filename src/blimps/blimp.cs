@@ -49,53 +49,81 @@ function getBlimp()
 	$BlimpSimSet.add(%shape);
 	return %shape;
 }
+$minBlimpSpeed = 0.1;
+$blimpAcceleration = 0.2;
 
 function AIPlayer::moveBlimp(%blimp, %destination)
 {
-	if (!%blimp.isBlimp)
-	{
-		return;
-	}
+    if (!%blimp.isBlimp)
+    {
+        return;
+    }
 
-	%blimp.setAimLocation(%destination);
-	%blimp.setMoveY(1);
-	%blimp.distanceCheckLoop(%destination);
-	if (isObject(%blimp.moveShape))
-	{
-		%blimp.moveShape.delete();
-	}
-	%blimp.moveShape = createRingMarker(%destination, "0 1 0 1", "1 1 0.1");
+    %blimp.setAimLocation(%destination);
+    // %blimp.setMoveY(1);
+    if (%blimp.moveSpeed $= "")
+    {
+        %blimp.setMoveY($minBlimpSpeed);
+        %blimp.moveSpeed = $minBlimpSpeed;
+    }
+    %blimp.lastMoved = getSimTime();
+    %blimp.distanceCheckLoop(%destination);
+    if (isObject(%blimp.moveShape))
+    {
+        %blimp.moveShape.delete();
+    }
+    %blimp.moveShape = createRingMarker(%destination, "0 1 0 1", "1 1 0.1");
 }
 
 function AIPlayer::distanceCheckLoop(%blimp, %destination)
 {
-	cancel(%blimp.distanceCheckLoop);
-	%dist = vectorDist(%blimp.getPosition(), %destination);
+    cancel(%blimp.distanceCheckLoop);
+    %directVec = vectorSub(%destination, %blimp.getPosition());
+    %dist = vectorLen(%directVec);
+    %currVec = %blimp.getForwardVector();
+    %dot = vectorDot(vectorNormalize(getWords(%directVec, 0, 1)), %currVec);
+    %currMovespeed = %blimp.moveSpeed;
 
-	if (%dist < 0.5 || (%dist < 1 && %dist > %blimp.lastDistanceCheck))
-	{
-		%blimp.setMoveY(0);
-		%blimp.clearAim();
-		%blimp.moveShape.delete();
-		return;
-	}
+    %timeSinceLastMove = getSimTime() - %blimp.lastMoved;
+    %accelerationAmount = (%timeSinceLastMove / 1000 * $blimpAcceleration);
 
-	%blimp.lastDistanceCheck = %dist;
+    if (%dot > 0.8) //if we're facing the target, speed up slowly
+    {
+        %addedVel++;
+        %currMovespeed = getMin(%currMovespeed + %accelerationAmount, %dot);
+    }
+    else //we're not facing the target, slow down
+    {
+        %pre = %currMovespeed;
+        %currMovespeed = getMax(%currMovespeed - %accelerationAmount, $minBlimpSpeed);
+        %sub = %sub + (%pre - %currMovespeed);
+    }
+    
+    if (%dist < 4) //if we're close to the target, slow down
+    {
+        %slowingDown = 1;
+        %pre = %currMovespeed;
+        %currMovespeed = getMax((%currMovespeed - 0.1) * (1 - 0.99 * %timeSinceLastMove / 1000) + 0.1, $minBlimpSpeed);
+        %sub = %sub + (%pre - %currMovespeed);
+    }
 
-	%blimp.distanceCheckLoop = %blimp.schedule(33, distanceCheckLoop, %destination);
-}
+    %blimp.setMoveY(%currMovespeed);
+    %blimp.moveSpeed = %currMovespeed;
+    echo("Mul: " @ (1 - 0.8 * %timeSinceLastMove / 1000) @ " | Movespeed: " @ %currMovespeed @ " | Dist: " @ %dist, 8564862);
+    %blimp.setShapeName("Movespeed: " @ %currMovespeed @ " | Dist: " @ %dist, 8564862);
 
-function testAim(%pl, %bot)
-{
-	if (!isObject(%pl) || !isObject(%bot))
-	{
-		return;
-	}
+    if (%dist < 0.5)
+    {
+        %blimp.setMoveY(0);
+        %blimp.clearAim();
+        %blimp.moveShape.delete();
+        %blimp.moveSpeed = "";
+        return;
+    }
 
-	cancel(%bot.testAimSched);
+    %blimp.lastMoved = getSimTime();
 
-	%bot.setAimVector(%pl.getForwardVector());
-	%bot.testAimSched = schedule(33, %bot, testAim, %pl, %bot);
+    %blimp.distanceCheckLoop = %blimp.schedule(33, distanceCheckLoop, %destination);
 }
 
 function serverCmdGetBalloon(%cl)
@@ -115,33 +143,4 @@ function serverCmdGetBalloon(%cl)
 	%cl.balloon.setTransform(%cl.player.getTransform());
 	%cl.balloon.setShapeName(%cl.name @ "'s Balloon", 8564862);
 	%cl.balloon.setNodeColor("ALL", %cl.chestcolor);
-
-	testAim(%cl.player, %cl.balloon);
-}
-
-function serverCmdTestMoveBalloon(%cl)
-{
-	if (!isObject(%cl.balloon))
-	{
-		return;
-	}
-
-	cancel(%cl.balloon.testAimSched);
-	%cl.balloon.setMoveY(0);
-
-	// talk("moving");
-	if (isObject(%cl.player))
-	{
-		%pl = %cl.player;
-		%start = %pl.getEyeTransform();
-		%end = vectorAdd(vectorScale(%pl.getEyeVector(), 200), %start);
-		%masks = $Typemasks::fxBrickObjectType | $Typemasks::StaticObjectType | $Typemasks::StaticShapeObjectType | $Typemasks::EnvironmentObjectType;
-		%ray = containerRaycast(%start, %end, %masks);
-		if (isObject(%hit = getWord(%ray, 0)))
-		{
-			%hitloc = getWords(%ray, 1, 3);
-			// talk(%hitloc);
-			%cl.balloon.moveBlimp(%hitloc);
-		}
-	}
 }
