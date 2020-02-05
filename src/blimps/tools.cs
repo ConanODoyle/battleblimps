@@ -1,3 +1,10 @@
+datablock ItemData(BlimpControlItem : printGun)
+{
+	uiName = "BlimpControlImage";
+	colorShiftColor = "1 0 0 1";
+	image = BlimpControlImage;
+};
+
 datablock ShapeBaseImageData(BlimpControlImage)
 {
 	shapeFile = printGunImage.shapefile;
