@@ -86,4 +86,10 @@ function serverCmdGetBalloon(%cl)
 	%cl.balloon.setShapeName(%cl.name @ "'s Balloon", 8564862);
 	%cl.balloon.setNodeColor("ALL", %cl.chestcolor);
 	%cl.controlBlimp(%cl.balloon);
+	if (isObject(%cl.player))
+	{
+		%pl = %cl.player;
+		%pl.setScale("0.1 0.1 0.1");
+		%cl.balloon.mountObject(%pl, 5);
+	}
 }
