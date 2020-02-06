@@ -164,25 +164,25 @@ function blimpControlTick(%blimp, %cl)
 		%blimp.playThread(0, %playThread);
 	}
 
-	%finalVelocity = vectorAdd(%originalVelocity, %addedVelocity);
+	%prefinalVelocity = vectorAdd(%originalVelocity, %addedVelocity);
 
-	//clamp and fix z velocity
-	//decelerate the ship if it is above max vel
-	%z = getWord(%finalVelocity, 2);
-	%z = mAbs(%z) > %maxVerticalSpeed ? (%z > 0 ? %z + %downAcceleration : %z + %upAcceleration) : %z;
+	//clamp and check z velocity
+	//do not accelerate if higher than max (with added velocity)
+	%z = getWord(%prefinalVelocity, 2);
+	%addedVelocity = mAbs(%z) > %maxVerticalSpeed ? getWords(%addedVelocity, 0, 1) : %addedVelocity;
+	
 	//clamp and fix horiz velocity
-	%horizVel = getWords(%finalVelocity, 0, 1);
+	//do not accelerate if higher than max (with added velocity)
+	%horizVel = getWords(%originalVelocity, 0, 1);
 	%horizVelProj = vectorScale(%forwardDir, vectorDot(%horizVel, %forwardDir));
-	%fixedHVector = vectorAdd(vectorScale(%horizVel, %driftFactor), vectorScale(%horizVelProj, 1 - %driftFactor));
-	if (vectorLen(%fixedHVector) > %maxHorizontalSpeed)
+	%adjustedHVector = vectorAdd(vectorScale(%horizVel, %driftFactor), vectorScale(%horizVelProj, 1 - %driftFactor));
+	%finalHVector = vectorAdd(getWords(%addedVelocity, 0, 1), %adjustedHVector);
+	if (vectorLen(%finalHVector) > %maxHorizontalSpeed)
 	{
-		%fixedHVectorNorm = vectorNormalize(%fixedHVector);
-		%max = vectorScale(%fixedHVectorNorm, %maxHorizontalSpeed);
-		%diff = vectorLen(vectorSub(%max, %fixedHVector));
-		%fixedHVector = vectorAdd(%fixedHVector, vectorScale(%fixedHVectorNorm, -1 * getMin(%diff, %forwardAcceleration)));
+		%addedVelocity = "0 0 " @ getWord(%addedVelocity, 2);
 	}
 
-	%finalVelocity = getWords(%fixedHVector, 0, 1) SPC %z;
+	%finalVelocity = vectorAdd(%finalHVector SPC getWord(%originalVelocity, 2), %addedVelocity);
 	%blimp.setVelocity(%finalVelocity);
 
 	%cl.blimpControlSched = schedule(1, %blimp, blimpControlTick, %blimp, %cl);
