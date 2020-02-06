@@ -45,6 +45,14 @@ function getBlimp()
 	{
 		dataBlock = BlimpArmor;
 		isBlimp = 1;
+
+		upAcceleration = 1;
+		downAcceleration = -1;
+		forwardAcceleration = 1.2;
+		backwardAcceleration = -0.7;
+		maxHorizontalSpeed = 4;
+		maxVerticalSpeed = 1;
+
 		driftFactor = 0.5;
 	};
 	%blimp.hideNode("ALL");
