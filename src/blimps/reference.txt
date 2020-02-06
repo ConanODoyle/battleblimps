@@ -13,3 +13,11 @@ REQUIRED:
 									- 0.4 = 0.4 * original velocity + 0.6 * original velocity projected onto forward vector
 									- 0 = only velocity projected onto forward vector is kept;
 									- Clamping will work on pre-move velocity, then add the new acceleration
+
+
+--Planes--
+%plane.eyeAcceleration;			- TU/s^2 along eye every tick when LMB held down (should be positive);
+%plane.passiveAcceleration;		- TU/s^2 along eye every tick passively (should be positive);
+%plane.maxUpAcceleration;		- Clamps speed to ensure the z-component of acceleration is lower than this value;
+%plane.maxSpeed;				- Maximum speed in any given direction;
+%plane.minSpeed;				- Minimum speed in any given direction;

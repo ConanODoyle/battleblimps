@@ -54,6 +54,7 @@ function getBlimp()
 		maxVerticalSpeed = 1;
 
 		driftFactor = 0.5;
+		maxYawSpeed = 0.8;
 	};
 	%blimp.hideNode("ALL");
 	%blimp.unhideNode("balloon");
@@ -68,28 +69,92 @@ function getBlimp()
 	return %blimp;
 }
 
+function getPlane(%type)
+{
+	if (%type $= "")
+	{
+		%type = "buzzer";
+	}
+
+	switch$ (%type)
+	{
+		case "buzzer": %engine = "frontprop backprop backengine";
+		case "biplane": %engine = "frontprop";
+		case "dartplane": %engine = "backprop backengine";
+		default: error("Invalid plane type '" @ %type @ "'!"); return;
+	}
+
+	%buzzer = new AIPlayer(Buzzer)
+	{
+		dataBlock = BuzzerPlaneArmor;
+		isPlane = 1;
+
+		// upAcceleration = 0;
+		// downAcceleration = 0;
+		// forwardAcceleration = 0;
+		// backwardAcceleration = 0;
+		// maxHorizontalSpeed = 10;
+		// maxVerticalSpeed = 10;
+		maxSpeed = 10;
+		minSpeed = 2;
+		maxUpAcceleration = 2;
+		eyeAcceleration = 2;
+		passiveAcceleration = 0.5;
+
+		driftFactor = 0.5;
+		maxYawSpeed = 5;
+	};
+	%buzzer.hideNode("ALL");
+	%buzzer.unhideNode(%type);
+	for (%i = 0; %i < getWordCount(%engine); %i++)
+	{
+		%buzzer.unhideNode(getWord(%engine, %i));
+	}
+	$BlimpSimSet.add(%buzzer);
+	return %buzzer;
+}
+
 function serverCmdGetBalloon(%cl)
 {
-	if (isObject(%cl.balloon))
+	if (isObject(%cl.aircraft))
 	{
-		%cl.balloon.delete();
+		%cl.aircraft.delete();
 	}
 
 	if (!isObject(%cl.player))
 	{
 		return;
 	}
-	%cl.balloon = getBlimp();
-	%cl.balloon.maxyawspeed = 0.8;
-	// %cl.balloon.setMoveY(0.2);
-	%cl.balloon.setTransform(%cl.player.getTransform());
-	%cl.balloon.setShapeName(%cl.name @ "'s Balloon", 8564862);
-	%cl.balloon.setNodeColor("ALL", %cl.chestcolor);
-	%cl.controlBlimp(%cl.balloon);
+	%cl.aircraft = getBlimp();
+	// %cl.aircraft.setMoveY(0.2);
+	%cl.aircraft.setTransform(%cl.player.getTransform());
+	%cl.aircraft.setShapeName(%cl.name @ "'s Balloon", 8564862);
+	%cl.aircraft.setNodeColor("ALL", %cl.chestcolor);
+	%cl.controlAircraft(%cl.aircraft);
 	if (isObject(%cl.player))
 	{
 		%pl = %cl.player;
 		%pl.setScale("0.1 0.1 0.1");
-		%cl.balloon.mountObject(%pl, 5);
+		%cl.aircraft.mountObject(%pl, 5);
 	}
+}
+
+
+function serverCmdGetBalloon(%cl)
+{
+	if (isObject(%cl.aircraft))
+	{
+		%cl.aircraft.delete();
+	}
+
+	if (!isObject(%cl.player))
+	{
+		return;
+	}
+	%cl.aircraft = getPlane();
+	// %cl.aircraft.setMoveY(0.2);
+	%cl.aircraft.setTransform(%cl.player.getTransform());
+	%cl.aircraft.setShapeName(%cl.name @ "'s Plane", 8564862);
+	%cl.aircraft.setNodeColor("ALL", %cl.chestcolor);
+	%cl.controlAircraft(%cl.aircraft);
 }

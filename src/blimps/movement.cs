@@ -1,32 +1,39 @@
-function GameConnection::controlBlimp(%cl, %blimp)
+function GameConnection::controlAircraft(%cl, %aircraft)
 {
-	if (!%cl.controllingBlimp || %cl.camera.isSpying != %blimp)
+	if (!%cl.controllingAircraft || %cl.camera.isSpying != %aircraft)
 	{
 		%cl.camera.setControlObject(%cl.camera); //must be first - pkg resetCamera resets subsequent lines
 
-		%cl.camera.schedule(1, setOrbitMode, %blimp, %blimp.getTransform(), 0, 10, 10, 1);
-		%cl.camera.isSpying = %blimp;
+		%cl.camera.schedule(1, setOrbitMode, %aircraft, %aircraft.getTransform(), 0, 10, 10, 1);
+		%cl.camera.isSpying = %aircraft;
 		%cl.setControlObject(%cl.camera);
 		%cl.camera.mode = "Orbit";
 	}
 
-	%cl.blimpFreelook = 0;
-	%cl.controllingBlimp = %blimp;
+	%cl.aircraftFreeLook = 0;
+	%cl.controllingAircraft = %aircraft;
 	%cl.upMovement = %cl.downMovement = %cl.forwardMovement = %cl.backMovement = 0;
-	%blimp.lastMoved = getSimTime();
+	%aircraft.lastMoved = getSimTime();
 
-	blimpControlTick(%blimp, %cl);
+	if (%aircraft.isBlimp)
+	{
+		blimpControlTick(%aircraft, %cl);
+	}
+	else if (%aircraft.isPlane)
+	{
+		planeControlTick(%aircraft, %cl);
+	}
 }
 
 function blimpControlTick(%blimp, %cl)
 {
-	cancel(%cl.blimpControlSched);
+	cancel(%cl.aircraftControlSched);
 
 	//end control if camera is not in control mode
-	if (%cl.controllingBlimp != %blimp || %cl.camera.mode !$= "Orbit" || !isObject(%cl.camera) || !isObject(%blimp))
+	if (%cl.controllingAircraft != %blimp || %cl.camera.mode !$= "Orbit" || !isObject(%cl.camera) || !isObject(%blimp))
 	{
 		%cl.camera.isSpying = 0;
-		%cl.controllingBlimp = 0;
+		%cl.controllingAircraft = 0;
 		%cl.camera.setMode("Observer");
 		return;
 	}
@@ -48,7 +55,7 @@ function blimpControlTick(%blimp, %cl)
 	%driftFactor 			= %blimp.driftFactor;
 
 	//update blimp rotation
-	if (!%cl.blimpFreelook)
+	if (!%cl.aircraftFreeLook)
 	{
 		%flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
 		%blimp.setAimVector(%flatvec);
@@ -131,8 +138,117 @@ function blimpControlTick(%blimp, %cl)
 		%cl.centerprintBlimpControl();
 	}
 
-	%cl.blimpControlSched = schedule(1, %blimp, blimpControlTick, %blimp, %cl);
+	%cl.aircraftControlSched = schedule(1, %blimp, blimpControlTick, %blimp, %cl);
 }
+
+function planeControlTick(%plane, %cl)
+{
+	cancel(%cl.aircraftControlSched);
+
+	//end control if camera is not in control mode
+	if (%cl.controllingAircraft != %plane || %cl.camera.mode !$= "Orbit" || !isObject(%cl.camera) || !isObject(%plane))
+	{
+		%cl.camera.isSpying = 0;
+		%cl.controllingAircraft = 0;
+		%cl.camera.setMode("Observer");
+		return;
+	}
+
+	%timeSinceLastMove = getSimTime() - %plane.lastMoved;
+	%timeSinceLastPrint = getSimTime() - %cl.lastPrintControls;
+	%plane.lastMoved = getSimTime();
+	%originalVelocity = %plane.getVelocity();
+	%eyeDir = %plane.getEyeVector();
+	%factor = %timeSinceLastMove / 1000;
+	%addedVelocity = "0 0 0";
+
+	%eyeAcceleration 		= %plane.eyeAcceleration * %factor;
+	%passiveAcceleration 	= %plane.passiveAcceleration * %factor;
+	%maxUpAcceleration	 	= %plane.maxUpAcceleration;
+	%maxSpeed 				= %plane.maxSpeed;
+	%minSpeed 				= %plane.minSpeed;
+	%driftFactor 			= %plane.driftFactor;
+
+	//update plane rotation
+	if (!%cl.planeFreelook)
+	{
+		%flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
+		%plane.setAimVector(%flatvec);
+		//prevents rotation updates not being sent to client due to slow turns
+		%plane.addVelocity("0 0 0.01");
+		%plane.addVelocity("0 0 -0.01");
+	}
+	else
+	{
+		%plane.clearAim();
+	}
+
+	//move plane
+	if (%cl.forwardMovement && !%cl.backMovement)
+	{
+		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%eyeDir, %forwardAcceleration));
+		%playThread = "runfast";
+	}
+	else if (%cl.backMovement && !%cl.forwardMovement)
+	{
+		%playThread = "root";
+	}
+	else if (%plane.lastThread !$= "run")
+	{
+		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%eyeDir, %passiveAcceleration));
+		%playThread = "run";
+	}
+
+	//play the correct thread
+	if (%plane.lastThread !$= %playThread && %playThread !$= "")
+	{
+		%plane.lastThread = %playThread;
+		%plane.playThread(0, %playThread);
+	}
+	
+	//clamp and fix velocity
+	//do not accelerate if higher than max (with added velocity)
+	%origVelProj = vectorScale(%eyeDir, vectorDot(%originalVelocity, %eyeDir));
+	%adjustedVector = vectorAdd(vectorScale(%originalVelocity, %driftFactor), vectorScale(%origVelProj, 1 - %driftFactor));
+	%finalVector = vectorAdd(getWords(%addedVelocity, 0, 1), %adjustedVector);
+
+	if (vectorLen(%finalVector) > %maxSpeed)
+	{
+		%finalVector = vectorScale(vectorNormalize(%finalVector), %maxSpeed);
+	}
+	else if (vectorLen(%finalVector) < %minSpeed)
+	{
+		%finalVector = vectorScale(vectorNormalize(%finalVector), %minSpeed);
+	}
+
+	if (getWord(%finalVector, 2) > %maxVerticalSpeed) //only limit upward speed
+	{
+		%finalVector = getWords(%finalVector, 0, 1) @ %maxVerticalSpeed; 
+	}
+
+	%finalVelocity = %finalVelocity;
+	%plane.setVelocity(%finalVelocity);
+
+	if (%plane.debugVelocity)
+	{
+		%name = "H: " @ vectorLen(getWords(%finalVelocity, 0, 1)) @ " V:" @ getWord(%finalVelocity, 2);
+		%name = %name @ " | Max H/V: " @ %maxHorizontalSpeed SPC %maxVerticalSpeed;
+		%plane.setShapeName(%name, 8564862);
+		if (%plane.echoDebug)
+		{
+			echo(%name);
+		}
+	}
+
+	if (%timeSinceLastPrint > 50)
+	{
+		%cl.lastPrintControls = getSimTime();
+		%cl.centerprintPlaneControl();
+	}
+
+	%cl.aircraftControlSched = schedule(1, %plane, planeControlTick, %plane, %cl);
+}
+
 
 function toggleFreeLook(%cl)
 {
@@ -141,14 +257,14 @@ function toggleFreeLook(%cl)
 		return;
 	}
 	%cl.lastToggleFreelook = getSimTime();
-	%cl.blimpFreelook = !%cl.blimpFreelook;
+	%cl.aircraftFreeLook = !%cl.aircraftFreeLook;
 	%cl.centerprintBlimpControl();
 }
 
 function GameConnection::centerprintBlimpControl(%cl)
 {
-	%blimp = %cl.controllingBlimp;
-	if (!isObject(%blimp))
+	%blimp = %cl.controllingAircraft;
+	if (!isObject(%blimp) || !%blimp.isBlimp)
 	{
 		return;
 	}
@@ -156,33 +272,59 @@ function GameConnection::centerprintBlimpControl(%cl)
 	%velocity = %blimp.getVelocity();
 	%horizontalSpeed = vectorLen(getWords(%velocity, 0, 1));
 	%verticalSpeed = getWord(%velocity, 2);
-	%freelook = %cl.blimpFreelook;
+	%freelook = %cl.aircraftFreeLook;
 	%maxHorizontalSpeed 	= %blimp.maxHorizontalSpeed * 10;
 	%maxVerticalSpeed 		= %blimp.maxVerticalSpeed * 10;
 	%driftFactor 			= %blimp.driftFactor;
-	%forward = %cl.forwardMovement ? "FWD " : "";
-	%backward = %cl.backMovement ? "BCK " : "";
-	%up = %cl.upMovement ? "UP " : "";
-	%down = %cl.downMovement ? "DWN " : "";
+	%forward = %cl.forwardMovement && !%cl.backMovement ? "FWD " : "";
+	%backward = %cl.backMovement && !%cl.forwardMovement ? "BCK " : "";
+	%up = %cl.upMovement && !%cl.downMovement ? "UP " : "";
+	%down = %cl.downMovement && !%cl.upMovement ? "DWN " : "";
 	%none = %forward @ %backward @ %up @ %down !$= "" ? "" : "\c3OFF";
 
 	%format = "<just:right><font:Consolas:18>";
 	%throttle = "\c5Throttle: \c6[\c2" @ trim(%forward @ %backward @ %up @ %down @ %none) @ "\c6]";
-	%hspeedometer = "\c5Horiz. Speed: \c6[\c2" @ mFloor(%horizontalSpeed * 10 + 0.5) @ " / " @ %maxHorizontalSpeed @ "\c6]";
-	%vspeedometer = "\c5Vert. Speed: \c6[\c2" @ mFloor(%verticalSpeed * 10 + 0.5) @ " / " @ %maxVerticalSpeed @ "\c6]";
+	%hspeedometer = "\c5Horiz. Speed: \c6[\c2" @ mFloor(%horizontalSpeed * 10 + 0.5) @ " \c6|\c5" @ %maxHorizontalSpeed @ "\c6]";
+	%vspeedometer = "\c5Vert. Speed: \c6[\c2" @ mFloor(%verticalSpeed * 10 + 0.5) @ " \c6|\c5" @ %maxVerticalSpeed @ "\c6]";
 	%freelook = %freelook ? "\c0-FREELOOK ON-" : "";
 	%rf = " <br>";
 	%cl.centerprint(%format @ %throttle @ %rf @ %hspeedometer @ %rf @ %vspeedometer @ %rf @ %freelook, 1);
+}
+
+function GameConnection::centerprintPlaneControl(%cl)
+{
+	%plane = %cl.controllingAircraft;
+	if (!isObject(%plane) || !%plane.isplane)
+	{
+		return;
+	}
+
+	%velocity = %plane.getVelocity();
+	%speed = vectorLen(getWords(%velocity, 0, 1));
+	%freelook 	= %cl.aircraftFreeLook;
+	%maxSpeed 		= %plane.maxSpeed * 10;
+	%minSpeed 		= %plane.minSpeed * 10;
+	%driftFactor 			= %plane.driftFactor;
+	%forward = %cl.forwardMovement && !%cl.backMovement ? "FWD++ " : "";
+	%backward = %cl.backMovement && !%cl.forwardMovement ? "\c3OFF " : "";
+	%none = %forward @ %backward !$= "" ? "" : "FWD";
+
+	%format = "<just:right><font:Consolas:18>";
+	%throttle = "\c5Throttle: \c6[\c2" @ trim(%forward @ %backward @ %up @ %down @ %none) @ "\c6]";
+	%speedometer = "\c5Speed: \c6[\c5" @ %minSpeed @ "\c6|\c2 " @ mFloor(%speed * 10 + 0.5) @ " \c6|\c5" @ %maxSpeed @ "\c6]";
+	%freelook = %freelook ? "\c0-FREELOOK ON-" : "";
+	%rf = " <br>";
+	%cl.centerprint(%format @ %throttle @ %rf @ %speedometer @ %rf @ %vspeedometer @ %rf @ %freelook, 1);
 }
 
 package resetCamera
 {
 	function GameConnection::setControlObject(%cl, %obj)
 	{
-		if (%cl.controllingBlimp)
+		if (%cl.controllingAircraft)
 		{
 			%cl.camera.isSpying = 0;
-			%cl.controllingBlimp = 0;
+			%cl.controllingAircraft = 0;
 			%cl.camera.setMode("Observer");
 		}
 		return parent::setControlObject(%cl, %obj);
@@ -191,7 +333,7 @@ package resetCamera
 	function Observer::onTrigger(%this, %obj, %trigger, %state)
 	{
 		%cl = %obj.getControllingClient();
-		if (%cl.controllingBlimp)
+		if (%cl.controllingAircraft)
 		{
 			//trig 2 = spacebar
 			//trig 3 = shift
@@ -209,7 +351,7 @@ package resetCamera
 
 	function serverCmdShiftBrick(%cl, %x, %y, %z)
 	{
-		if (%cl.controllingBlimp)
+		if (%cl.controllingAircraft)
 		{
 			toggleFreeLook(%cl);
 			return;
@@ -219,7 +361,7 @@ package resetCamera
 
 	function serverCmdRotateBrick(%cl, %rot)
 	{
-		if (%cl.controllingBlimp)
+		if (%cl.controllingAircraft)
 		{
 			toggleFreeLook(%cl);
 			return;
@@ -229,7 +371,7 @@ package resetCamera
 
 	function serverCmdPlantBrick(%cl)
 	{
-		if (%cl.controllingBlimp)
+		if (%cl.controllingAircraft)
 		{
 			toggleFreeLook(%cl);
 			return;
@@ -239,7 +381,7 @@ package resetCamera
 
 	function serverCmdCancelBrick(%cl)
 	{
-		if (%cl.controllingBlimp)
+		if (%cl.controllingAircraft)
 		{
 			toggleFreeLook(%cl);
 			return;
