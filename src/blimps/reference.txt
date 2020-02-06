@@ -1,0 +1,11 @@
+%blimp.upAcceleration;			- TU/s^2 vertically when holding spacebar (should be positive)
+%blimp.downAcceleration;		- TU/s^2 vertically when holding shift (should be negative)
+%blimp.forwardAcceleration;		- TU/s^2 along forward vector when holding LMB (should be positive)
+%blimp.backwardAcceleration;	- TU/s^2 along forward vector when holding RMB (should be negative)
+%blimp.maxHorizontalSpeed;		- TU/s maximum horizontally. If speed + moving > max, the move command will be nullified.
+%blimp.maxVerticalSpeed;		- TU/s maximum vertically. If speed + moving > max, the move command will be nullified.
+%blimp.driftFactor;				- How much of the original velocity component to keep when projecting onto forward vector.
+									- 1 = no velocity is projected onto forward vector when turning (free body)
+									- 0.4 = 0.4 * original velocity + 0.6 * original velocity projected onto forward vector
+									- 0 = only velocity projected onto forward vector is kept;
+									- Clamping will work on pre-move velocity, then add the new acceleration
