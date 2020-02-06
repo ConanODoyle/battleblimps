@@ -123,14 +123,14 @@ function createBoxOutline(%boundingbox, %color, %scale)
 	drawLine(%q1, %q3, %color, %scale, %scale).isBox = 1;
 	drawLine(%q1, %q4, %color, %scale, %scale).isBox = 1;
 
-	drawLine(%p2, %q3, %color, %scale, %scale).isBox = 1;
-	drawLine(%p2, %q4, %color, %scale, %scale).isBox = 1;
+	drawLine(%p2, %q3, %color, %scale, -%scale).isBox = 1;
+	drawLine(%p2, %q4, %color, %scale, -%scale).isBox = 1;
 
-	drawLine(%p3, %q2, %color, %scale, %scale).isBox = 1;
-	drawLine(%p3, %q4, %color, %scale, %scale).isBox = 1;
+	drawLine(%p3, %q2, %color, %scale, -%scale).isBox = 1;
+	drawLine(%p3, %q4, %color, %scale, -%scale).isBox = 1;
 
-	drawLine(%p4, %q3, %color, %scale, %scale).isBox = 1;
-	drawLine(%p4, %q2, %color, %scale, %scale).isBox = 1;
+	drawLine(%p4, %q3, %color, %scale, -%scale).isBox = 1;
+	drawLine(%p4, %q2, %color, %scale, -%scale).isBox = 1;
 }
 
 
