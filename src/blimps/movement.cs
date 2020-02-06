@@ -174,7 +174,7 @@ function blimpControlTick(%blimp, %cl)
 	%horizVel = getWords(%finalVelocity, 0, 1);
 	%horizVelProj = vectorScale(%forwardDir, vectorDot(%horizVel, %forwardDir));
 	%fixedHVector = vectorAdd(vectorScale(%horizVel, %driftFactor), vectorScale(%horizVelProj, 1 - %driftFactor));
-	if (%vectorLen(%fixedHVector > %maxHorizontalSpeed))
+	if (vectorLen(%fixedHVector) > %maxHorizontalSpeed)
 	{
 		%fixedHVectorNorm = vectorNormalize(%fixedHVector);
 		%max = vectorScale(%fixedHVectorNorm, %maxHorizontalSpeed);
