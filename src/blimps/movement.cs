@@ -1,84 +1,3 @@
-
-$minBlimpSpeed = 0.1;
-$blimpAcceleration = 0.2;
-
-// function AIPlayer::moveBlimp(%blimp, %destination)
-// {
-// 	if (!%blimp.isBlimp)
-// 	{
-// 		return;
-// 	}
-
-// 	%blimp.setAimLocation(%destination);
-// 	// %blimp.setMoveY(1);
-// 	if (%blimp.moveSpeed $= "")
-// 	{
-// 		%blimp.setMoveY($minBlimpSpeed);
-// 		%blimp.moveSpeed = $minBlimpSpeed;
-// 	}
-// 	%blimp.lastMoved = getSimTime();
-// 	%blimp.distanceCheckLoop(%destination);
-// 	if (isObject(%blimp.moveShape))
-// 	{
-// 		%blimp.moveShape.delete();
-// 	}
-// 	%blimp.moveShape = createRingMarker(%destination, "0 1 0 1", "1 1 0.1");
-// }
-
-// function AIPlayer::distanceCheckLoop(%blimp, %destination)
-// {
-// 	cancel(%blimp.distanceCheckLoop);
-// 	%directVec = vectorSub(%destination, %blimp.getPosition());
-// 	%dist = vectorLen(%directVec);
-// 	%currVec = %blimp.getForwardVector();
-// 	%dot = vectorDot(vectorNormalize(getWords(%directVec, 0, 1)), %currVec);
-// 	%currMovespeed = %blimp.moveSpeed;
-
-// 	%timeSinceLastMove = getSimTime() - %blimp.lastMoved;
-// 	%accelerationAmount = (%timeSinceLastMove / 1000 * $blimpAcceleration);
-
-// 	if (%dot > 0.8) //if we're facing the target, speed up slowly
-// 	{
-// 		%addedVel++;
-// 		%currMovespeed = getMin(%currMovespeed + %accelerationAmount, %dot);
-// 	}
-// 	else //we're not facing the target, slow down
-// 	{
-// 		%pre = %currMovespeed;
-// 		%currMovespeed = getMax(%currMovespeed - %accelerationAmount, $minBlimpSpeed);
-// 		%sub = %sub + (%pre - %currMovespeed);
-// 	}
-	
-// 	if (%dist < 4) //if we're close to the target, slow down
-// 	{
-// 		%slowingDown = 1;
-// 		%pre = %currMovespeed;
-// 		%currMovespeed = getMax((%currMovespeed - 0.1) * (1 - 0.99 * %timeSinceLastMove / 1000) + 0.1, $minBlimpSpeed);
-// 		%sub = %sub + (%pre - %currMovespeed);
-// 	}
-
-// 	%blimp.setMoveY(%currMovespeed);
-// 	%blimp.moveSpeed = %currMovespeed;
-// 	if (%blimp.debug)
-// 	{
-// 		echo("Mul: " @ (1 - 0.8 * %timeSinceLastMove / 1000) @ " | Movespeed: " @ %currMovespeed @ " | Dist: " @ %dist, 8564862);
-// 		%blimp.setShapeName("Movespeed: " @ %currMovespeed @ " | Dist: " @ %dist, 8564862);
-// 	}
-
-// 	if (%dist < 0.5)
-// 	{
-// 		%blimp.setMoveY(0);
-// 		%blimp.clearAim();
-// 		%blimp.moveShape.delete();
-// 		%blimp.moveSpeed = "";
-// 		return;
-// 	}
-
-// 	%blimp.lastMoved = getSimTime();
-
-// 	%blimp.distanceCheckLoop = %blimp.schedule(33, distanceCheckLoop, %destination);
-// }
-
 function GameConnection::controlBlimp(%cl, %blimp)
 {
 	if (!%cl.controllingBlimp || %cl.camera.isSpying != %blimp)
@@ -91,7 +10,9 @@ function GameConnection::controlBlimp(%cl, %blimp)
 		%cl.camera.mode = "Orbit";
 	}
 
+	%cl.blimpFreelook = 0;
 	%cl.controllingBlimp = %blimp;
+	%cl.upMovement = %cl.downMovement = %cl.forwardMovement = %cl.backMovement = 0;
 	%blimp.lastMoved = getSimTime();
 
 	blimpControlTick(%blimp, %cl);
@@ -111,6 +32,7 @@ function blimpControlTick(%blimp, %cl)
 	}
 
 	%timeSinceLastMove = getSimTime() - %blimp.lastMoved;
+	%timeSinceLastPrint = getSimTime() - %cl.lastPrintControls;
 	%blimp.lastMoved = getSimTime();
 	%originalVelocity = %blimp.getVelocity();
 	%forwardDir = %blimp.getForwardVector();
@@ -126,11 +48,18 @@ function blimpControlTick(%blimp, %cl)
 	%driftFactor 			= %blimp.driftFactor;
 
 	//update blimp rotation
-	%flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
-	%blimp.setAimVector(%flatvec);
-	//prevents rotation updates not being sent to client due to slow turns
-	%blimp.addVelocity("0 0 0.01");
-	%blimp.addVelocity("0 0 -0.01");
+	if (!%cl.blimpFreelook)
+	{
+		%flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
+		%blimp.setAimVector(%flatvec);
+		//prevents rotation updates not being sent to client due to slow turns
+		%blimp.addVelocity("0 0 0.01");
+		%blimp.addVelocity("0 0 -0.01");
+	}
+	else
+	{
+		%blimp.clearAim();
+	}
 
 	//move blimp
 	if (%cl.upMovement && !%cl.downMovement)
@@ -196,16 +125,66 @@ function blimpControlTick(%blimp, %cl)
 		}
 	}
 
+	if (%timeSinceLastPrint > 50)
+	{
+		%cl.lastPrintControls = getSimTime();
+		%cl.centerprintBlimpControl();
+	}
+
 	%cl.blimpControlSched = schedule(1, %blimp, blimpControlTick, %blimp, %cl);
+}
+
+function toggleFreeLook(%cl)
+{
+	if (getSimTime() - %cl.lastToggleFreelook < 50)
+	{
+		return;
+	}
+	%cl.lastToggleFreelook = getSimTime();
+	%cl.blimpFreelook = !%cl.blimpFreelook;
+	%cl.centerprintBlimpControl();
+}
+
+function GameConnection::centerprintBlimpControl(%cl)
+{
+	%blimp = %cl.controllingBlimp;
+	if (!isObject(%blimp))
+	{
+		return;
+	}
+
+	%velocity = %blimp.getVelocity();
+	%horizontalSpeed = vectorLen(getWords(%velocity, 0, 1));
+	%verticalSpeed = getWord(%velocity, 2);
+	%freelook = %cl.blimpFreelook;
+	%maxHorizontalSpeed 	= %blimp.maxHorizontalSpeed * 10;
+	%maxVerticalSpeed 		= %blimp.maxVerticalSpeed * 10;
+	%driftFactor 			= %blimp.driftFactor;
+	%forward = %cl.forwardMovement ? "FWD " : "";
+	%backward = %cl.backMovement ? "BCK " : "";
+	%up = %cl.upMovement ? "UP " : "";
+	%down = %cl.downMovement ? "DWN " : "";
+	%none = %forward @ %backward @ %up @ %down !$= "" ? "" : "\c3OFF";
+
+	%format = "<just:right><font:Consolas:18>";
+	%throttle = "\c5Throttle: \c6[\c2" @ trim(%forward @ %backward @ %up @ %down @ %none) @ "\c6]";
+	%hspeedometer = "\c5Horiz. Speed: \c6[\c2" @ mFloor(%horizontalSpeed * 10 + 0.5) @ " / " @ %maxHorizontalSpeed @ "\c6]";
+	%vspeedometer = "\c5Vert. Speed: \c6[\c2" @ mFloor(%verticalSpeed * 10 + 0.5) @ " / " @ %maxVerticalSpeed @ "\c6]";
+	%freelook = %freelook ? "\c0-FREELOOK ON-" : "";
+	%rf = " <br>";
+	%cl.centerprint(%format @ %throttle @ %rf @ %hspeedometer @ %rf @ %vspeedometer @ %rf @ %freelook, 1);
 }
 
 package resetCamera
 {
 	function GameConnection::setControlObject(%cl, %obj)
 	{
-		%cl.camera.isSpying = 0;
-		%cl.controllingBlimp = 0;
-		%cl.camera.setMode("Observer");
+		if (%cl.controllingBlimp)
+		{
+			%cl.camera.isSpying = 0;
+			%cl.controllingBlimp = 0;
+			%cl.camera.setMode("Observer");
+		}
 		return parent::setControlObject(%cl, %obj);
 	}
 
@@ -214,9 +193,9 @@ package resetCamera
 		%cl = %obj.getControllingClient();
 		if (%cl.controllingBlimp)
 		{
-			echo("Trigger: " @ %trigger);
 			//trig 2 = spacebar
 			//trig 3 = shift
+			//trig 4 = rmb
 			switch (%trigger)
 			{
 				case 0: %cl.forwardMovement = %state;
@@ -226,6 +205,46 @@ package resetCamera
 			}
 		}
 		parent::onTrigger(%this, %obj, %trigger, %state);
+	}
+
+	function serverCmdShiftBrick(%cl, %x, %y, %z)
+	{
+		if (%cl.controllingBlimp)
+		{
+			toggleFreeLook(%cl);
+			return;
+		}
+		parent::serverCmdShiftBrick(%cl, %x, %y, %z);
+	}
+
+	function serverCmdRotateBrick(%cl, %rot)
+	{
+		if (%cl.controllingBlimp)
+		{
+			toggleFreeLook(%cl);
+			return;
+		}
+		parent::serverCmdRotateBrick(%cl, %rot);
+	}
+
+	function serverCmdPlantBrick(%cl)
+	{
+		if (%cl.controllingBlimp)
+		{
+			toggleFreeLook(%cl);
+			return;
+		}
+		parent::serverCmdPlantBrick(%cl);
+	}
+
+	function serverCmdCancelBrick(%cl)
+	{
+		if (%cl.controllingBlimp)
+		{
+			toggleFreeLook(%cl);
+			return;
+		}
+		parent::serverCmdCancelBrick(%cl);
 	}
 };
 activatePackage(resetCamera);
