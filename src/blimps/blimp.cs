@@ -85,4 +85,5 @@ function serverCmdGetBalloon(%cl)
 	%cl.balloon.setTransform(%cl.player.getTransform());
 	%cl.balloon.setShapeName(%cl.name @ "'s Balloon", 8564862);
 	%cl.balloon.setNodeColor("ALL", %cl.chestcolor);
+	%cl.controlBlimp(%cl.balloon);
 }

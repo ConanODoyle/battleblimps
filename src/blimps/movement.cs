@@ -182,13 +182,18 @@ function blimpControlTick(%blimp, %cl)
 		%addedVelocity = "0 0 " @ getWord(%addedVelocity, 2);
 	}
 
-	%finalVelocity = vectorAdd(%finalHVector SPC getWord(%originalVelocity, 2), %addedVelocity);
+	%finalVelocity = vectorAdd(getWords(%adjustedHVector, 0, 1) SPC getWord(%originalVelocity, 2), %addedVelocity);
 	%blimp.setVelocity(%finalVelocity);
 
 	if (%blimp.debugVelocity)
 	{
-		%blimp.setShapeName(%blimp.getVelocity() @ " | Max H/V: " @ %maxHorizontalSpeed SPC %maxVerticalSpeed);
-		echo("Velocity Debug: " @ %blimp.getVelocity() @ " | Max H/V: " @ %maxHorizontalSpeed SPC %maxVerticalSpeed);
+		%name = "H: " @ vectorLen(getWords(%finalVelocity, 0, 1)) @ " V:" @ getWord(%finalVelocity, 2);
+		%name = %name @ " | Max H/V: " @ %maxHorizontalSpeed SPC %maxVerticalSpeed;
+		%blimp.setShapeName(%name, 8564862);
+		if (%blimp.echoDebug)
+		{
+			echo(%name);
+		}
 	}
 
 	%cl.blimpControlSched = schedule(1, %blimp, blimpControlTick, %blimp, %cl);
