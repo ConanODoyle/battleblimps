@@ -45,6 +45,7 @@ function getBlimp()
 	{
 		dataBlock = BlimpArmor;
 		isBlimp = 1;
+		driftFactor = 0.5;
 	};
 	%blimp.hideNode("ALL");
 	%blimp.unhideNode("balloon");
@@ -72,7 +73,7 @@ function serverCmdGetBalloon(%cl)
 	}
 	%cl.balloon = getBlimp();
 	%cl.balloon.maxyawspeed = 0.8;
-	%cl.balloon.setMoveY(0.2);
+	// %cl.balloon.setMoveY(0.2);
 	%cl.balloon.setTransform(%cl.player.getTransform());
 	%cl.balloon.setShapeName(%cl.name @ "'s Balloon", 8564862);
 	%cl.balloon.setNodeColor("ALL", %cl.chestcolor);
