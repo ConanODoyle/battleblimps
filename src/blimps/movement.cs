@@ -191,7 +191,7 @@ function planeControlTick(%plane, %cl)
 	}
 	else if (%cl.backMovement && !%cl.forwardMovement)
 	{
-		%playThread = "root";
+		%playThread = "runslow";
 	}
 	else if (%plane.lastThread !$= "run")
 	{
