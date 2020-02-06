@@ -100,9 +100,6 @@ function GameConnection::controlBlimp(%cl, %blimp)
 function blimpControlTick(%blimp, %cl)
 {
 	cancel(%cl.blimpControlSched);
-	%timeSinceLastMove = getSimTime() - %blimp.lastMoved;
-	%factor = %timeSinceLastMove / 1000;
-	%name = mCeil(vectorLen(%blimp.getVelocity()) * 1000) / 1000 @ " ";
 
 	//end control if camera is not in control mode
 	if (%cl.controllingBlimp != %blimp || %cl.camera.mode !$= "Orbit" || !isObject(%cl.camera) || !isObject(%blimp))
@@ -113,68 +110,80 @@ function blimpControlTick(%blimp, %cl)
 		return;
 	}
 
-	%vec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
-	%blimp.setAimVector(%vec);
+	%timeSinceLastMove = getSimTime() - %blimp.lastMoved;
+	%blimp.lastMoved = getSimTime();
+	%originalVelocity = %blimp.getVelocity();
+	%forwardDir = %blimp.getForwardVector();
+	%factor = %timeSinceLastMove / 1000;
+	%addedVelocity = "0 0 0";
+
+	%upAcceleration 		= %blimp.upAcceleration * %factor;
+	%downAcceleration 		= %blimp.downAcceleration * %factor;
+	%forwardAcceleration 	= %blimp.forwardAcceleration * %factor;
+	%backwardAcceleration 	= %blimp.backwardAcceleration * %factor;
+	%maxHorizontalSpeed 	= %blimp.maxHorizontalSpeed;
+	%maxVerticalSpeed 		= %blimp.maxVerticalSpeed;
+	%driftFactor 			= %blimp.driftFactor;
+
+	//update blimp rotation
+	%flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
+	%blimp.setAimVector(%flatvec);
 	//prevents rotation updates not being sent to client due to slow turns
 	%blimp.addVelocity("0 0 0.01");
 	%blimp.addVelocity("0 0 -0.01");
 
-	%finalVelocity = %blimp.getVelocity();
-	%forwardDir = %blimp.getForwardVector();
-
-	// %name = "";
+	//move blimp
 	if (%cl.upMovement && !%cl.downMovement)
 	{
-		%name = %name SPC "up";
-		%finalVelocity = vectorAdd(%finalVelocity, "0 0 " @ 1 * %factor);
+		%addedVelocity = vectorAdd(%addedVelocity, "0 0 " @ %upAcceleration);
 	}
 	else if (%cl.downMovement && !%cl.upMovement)
 	{
-		%name = %name SPC "down";
-		%finalVelocity = vectorAdd(%finalVelocity, "0 0 " @ -1 * %factor);
+		%addedVelocity = vectorAdd(%addedVelocity, "0 0 " @ %downAcceleration);
 	}
 
 	if (%cl.forwardMovement && !%cl.backMovement)
 	{
-		%name = %name SPC "fwd";
-		%finalVelocity = vectorAdd(%finalVelocity, vectorScale(%forwardDir, 1 * %factor));
-		if (%blimp.lastThread !$= "run")
-		{
-			%blimp.lastThread = "run";
-			%blimp.playThread(0, run);
-		}
+		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%forwardDir, %forwardAcceleration));
+		%playThread = "run";
 	}
 	else if (%cl.backMovement && !%cl.forwardMovement)
 	{
-		%name = %name SPC "bck";
-		%finalVelocity = vectorAdd(%finalVelocity, vectorScale(%forwardDir, -1 * %factor));
-		if (%blimp.lastThread !$= "back")
-		{
-			%blimp.lastThread = "back";
-			%blimp.playThread(0, back);
-		}
+		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%forwardDir, %backwardAcceleration));
+		%playThread = "back";
 	}
-	else
+	else if (%blimp.lastThread !$= "root")
 	{
-		if (%blimp.lastThread !$= "root")
-		{
-			%blimp.lastThread = "root";
-			%blimp.playThread(0, root);
-		}
+		%playThread = "root";
 	}
 
-	%z = getWord(%blimp.getVelocity(), 2);
-	%unclampedVelocity = getWords(%blimp.getVelocity(), 0, 1);
-	%lookDir = %forwardDir;
-	%clamped = vectorScale(%lookDir, vectorDot(%unclampedVelocity, %lookDir));
-	%driftFactor = %blimp.driftFactor;
-	%finalVector = vectorAdd(vectorScale(%unclampedVelocity, %driftFactor), vectorScale(%clamped, 1 - %driftFactor));
-	// %name = "cl:" @ vectorLen(%finalVector) SPC "or:" @vectorLen(%blimp.getVelocity());
-	%blimp.setVelocity(vectorAdd(%finalVector, "0 0 " @ %z));
+	//play the correct thread
+	if (%blimp.lastThread !$= %playThread && %playThread !$= "")
+	{
+		%blimp.lastThread = %playThread;
+		%blimp.playThread(0, %playThread);
+	}
 
-	%blimp.setShapeName(%name, 8564862);
+	%finalVelocity = vectorAdd(%originalVelocity, %addedVelocity);
 
-	%blimp.lastMoved = getSimTime();
+	//clamp and fix z velocity
+	//decelerate the ship if it is above max vel
+	%z = getWord(%finalVelocity, 2);
+	%z = mAbs(%z) > %maxVerticalSpeed ? (%z > 0 ? %z + %downAcceleration : %z + %upAcceleration) : %z;
+	//clamp and fix horiz velocity
+	%horizVel = getWords(%finalVelocity, 0, 1);
+	%horizVelProj = vectorScale(%forwardDir, vectorDot(%horizVel, %forwardDir));
+	%fixedHVector = vectorAdd(vectorScale(%horizVel, %driftFactor), vectorScale(%horizVelProj, 1 - %driftFactor));
+	if (%vectorLen(%fixedHVector > %maxHorizontalSpeed))
+	{
+		%fixedHVectorNorm = vectorNormalize(%fixedHVector);
+		%max = vectorScale(%fixedHVectorNorm, %maxHorizontalSpeed);
+		%diff = vectorLen(vectorSub(%max, %fixedHVector));
+		%fixedHVector = vectorAdd(%fixedHVector, vectorScale(%fixedHVectorNorm, -1 * getMin(%diff, %forwardAcceleration)));
+	}
+
+	%finalVelocity = getWords(%fixedHVector, 0, 1) SPC %z;
+	%blimp.setVelocity(%finalVelocity);
 
 	%cl.blimpControlSched = schedule(1, %blimp, blimpControlTick, %blimp, %cl);
 }
