@@ -2,12 +2,12 @@ function GameConnection::controlAircraft(%cl, %aircraft)
 {
 	if (!%cl.controllingAircraft || %cl.camera.isSpying != %aircraft)
 	{
-		%cl.camera.setControlObject(%cl.camera); //must be first - pkg resetCamera resets subsequent lines
+		%cl.setControlObject(%cl.camera); //must be first - pkg aircraftMovementPackage resets subsequent lines
 
+		%cl.camera.setControlObject(%cl.camera); 
 		%dist = %aircraft.cameraDistance > 0 ? %aircraft.cameraDistance : 10;
 		%cl.camera.schedule(1, setOrbitMode, %aircraft, %aircraft.getTransform(), 0, %dist, %dist, 1);
 		%cl.camera.isSpying = %aircraft;
-		%cl.setControlObject(%cl.camera);
 		%cl.camera.mode = "Orbit";
 	}
 
@@ -326,7 +326,7 @@ function GameConnection::centerprintPlaneControl(%cl)
 	%cl.centerprint(%format @ %throttle @ %rf @ %speedometer @ %rf @ %vspeedometer @ %rf @ %freelook, 1);
 }
 
-package resetCamera
+package aircraftMovementPackage
 {
 	function GameConnection::setControlObject(%cl, %obj)
 	{
@@ -403,7 +403,7 @@ package resetCamera
 		parent::serverCmdCancelBrick(%cl);
 	}
 };
-activatePackage(resetCamera);
+activatePackage(aircraftMovementPackage);
 
 function initZeroGravZone()
 {

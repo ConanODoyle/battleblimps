@@ -53,6 +53,8 @@ function getBlimp()
 		maxHorizontalSpeed = 4;
 		maxVerticalSpeed = 1;
 
+		cameraDistance = 10;
+
 		driftFactor = 0.5;
 		maxYawSpeed = 0.8;
 	};
