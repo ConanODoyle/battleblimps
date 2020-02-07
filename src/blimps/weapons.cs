@@ -1,6 +1,6 @@
 datablock PlayerData(TurretBaseArmor : PlayerStandardArmor)
 {
-	shapeFile = "./turretBase.dts";
+	shapeFile = "./weapons/gunmount.dts";
 	uiName = "";
 
 	maxForwardSpeed = 0;
