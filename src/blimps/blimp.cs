@@ -95,11 +95,14 @@ function getPlane(%type)
 		// backwardAcceleration = 0;
 		// maxHorizontalSpeed = 10;
 		// maxVerticalSpeed = 10;
+		maxVerticalSpeed = 2;
 		maxSpeed = 10;
 		minSpeed = 2;
-		maxUpAcceleration = 2;
-		eyeAcceleration = 2;
-		passiveAcceleration = 0.5;
+		maxUpSpeed = 3;
+		eyeAcceleration = 2.5;
+		passiveAcceleration = 1;
+
+		cameraDistance = 4;
 
 		driftFactor = 0.5;
 		maxYawSpeed = 5;
@@ -140,7 +143,7 @@ function serverCmdGetBalloon(%cl)
 }
 
 
-function serverCmdGetBalloon(%cl)
+function serverCmdGetPlane(%cl)
 {
 	if (isObject(%cl.aircraft))
 	{

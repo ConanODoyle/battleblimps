@@ -4,7 +4,8 @@ function GameConnection::controlAircraft(%cl, %aircraft)
 	{
 		%cl.camera.setControlObject(%cl.camera); //must be first - pkg resetCamera resets subsequent lines
 
-		%cl.camera.schedule(1, setOrbitMode, %aircraft, %aircraft.getTransform(), 0, 10, 10, 1);
+		%dist = %aircraft.cameraDistance > 0 ? %aircraft.cameraDistance : 10;
+		%cl.camera.schedule(1, setOrbitMode, %aircraft, %aircraft.getTransform(), 0, %dist, %dist, 1);
 		%cl.camera.isSpying = %aircraft;
 		%cl.setControlObject(%cl.camera);
 		%cl.camera.mode = "Orbit";
@@ -164,7 +165,7 @@ function planeControlTick(%plane, %cl)
 
 	%eyeAcceleration 		= %plane.eyeAcceleration * %factor;
 	%passiveAcceleration 	= %plane.passiveAcceleration * %factor;
-	%maxUpAcceleration	 	= %plane.maxUpAcceleration;
+	%maxUpSpeed	 			= %plane.maxUpSpeed;
 	%maxSpeed 				= %plane.maxSpeed;
 	%minSpeed 				= %plane.minSpeed;
 	%driftFactor 			= %plane.driftFactor;
@@ -172,8 +173,9 @@ function planeControlTick(%plane, %cl)
 	//update plane rotation
 	if (!%cl.planeFreelook)
 	{
-		%flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
-		%plane.setAimVector(%flatvec);
+		// %flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
+		%eyeVec = %cl.camera.getEyeVector();
+		%plane.setAimVector(%eyeVec);
 		//prevents rotation updates not being sent to client due to slow turns
 		%plane.addVelocity("0 0 0.01");
 		%plane.addVelocity("0 0 -0.01");
@@ -186,14 +188,14 @@ function planeControlTick(%plane, %cl)
 	//move plane
 	if (%cl.forwardMovement && !%cl.backMovement)
 	{
-		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%eyeDir, %forwardAcceleration));
+		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%eyeDir, %eyeAcceleration));
 		%playThread = "runfast";
 	}
 	else if (%cl.backMovement && !%cl.forwardMovement)
 	{
 		%playThread = "runslow";
 	}
-	else if (%plane.lastThread !$= "run")
+	else
 	{
 		%addedVelocity = vectorAdd(%addedVelocity, vectorScale(%eyeDir, %passiveAcceleration));
 		%playThread = "run";
@@ -208,9 +210,15 @@ function planeControlTick(%plane, %cl)
 	
 	//clamp and fix velocity
 	//do not accelerate if higher than max (with added velocity)
+	if (vectorDot(%originalVelocity, %eyeDir) < 0)
+	{
+		%originalVelocity = vectorScale(%eyeDir, 0.01);
+	}
+
 	%origVelProj = vectorScale(%eyeDir, vectorDot(%originalVelocity, %eyeDir));
 	%adjustedVector = vectorAdd(vectorScale(%originalVelocity, %driftFactor), vectorScale(%origVelProj, 1 - %driftFactor));
-	%finalVector = vectorAdd(getWords(%addedVelocity, 0, 1), %adjustedVector);
+	%finalVector = vectorAdd(%addedVelocity, %adjustedVector);
+	%record = %finalVector;
 
 	if (vectorLen(%finalVector) > %maxSpeed)
 	{
@@ -221,18 +229,19 @@ function planeControlTick(%plane, %cl)
 		%finalVector = vectorScale(vectorNormalize(%finalVector), %minSpeed);
 	}
 
-	if (getWord(%finalVector, 2) > %maxVerticalSpeed) //only limit upward speed
+	if (getWord(%finalVector, 2) > %maxUpSpeed) //only limit upward speed
 	{
-		%finalVector = getWords(%finalVector, 0, 1) @ %maxVerticalSpeed; 
+		%finalVector = getWords(%finalVector, 0, 1) SPC %maxUpSpeed; 
+		%plane.reducingcount = %finalVector;
 	}
 
-	%finalVelocity = %finalVelocity;
+	%finalVelocity = %finalVector;
 	%plane.setVelocity(%finalVelocity);
 
 	if (%plane.debugVelocity)
 	{
 		%name = "H: " @ vectorLen(getWords(%finalVelocity, 0, 1)) @ " V:" @ getWord(%finalVelocity, 2);
-		%name = %name @ " | Max H/V: " @ %maxHorizontalSpeed SPC %maxVerticalSpeed;
+		%name = %name @ " | Previous: " @ %plane.reducingcount;
 		%plane.setShapeName(%name, 8564862);
 		if (%plane.echoDebug)
 		{
@@ -300,7 +309,7 @@ function GameConnection::centerprintPlaneControl(%cl)
 	}
 
 	%velocity = %plane.getVelocity();
-	%speed = vectorLen(getWords(%velocity, 0, 1));
+	%speed = vectorLen(%velocity);
 	%freelook 	= %cl.aircraftFreeLook;
 	%maxSpeed 		= %plane.maxSpeed * 10;
 	%minSpeed 		= %plane.minSpeed * 10;
@@ -344,6 +353,11 @@ package resetCamera
 				case 2: %cl.upMovement = %state;
 				case 3: %cl.downMovement = %state;
 				case 4: %cl.backMovement = %state;
+			}
+
+			if (%cl.controllingAircraft.isPlane && %trigger == 2)
+			{
+				%cl.controllingAircraft.setImageTrigger(0, %state);
 			}
 		}
 		parent::onTrigger(%this, %obj, %trigger, %state);
