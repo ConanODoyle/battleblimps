@@ -46,27 +46,27 @@ datablock ParticleEmitterData(GatlingTrailEmitter)
 datablock ProjectileData(GatlingProjectile)
 {
    projectileShapeName = "./empty.dts";
-   directDamage        = 15;
+   directDamage        = 1;
    directDamageType    = $DamageType::Default;
    radiusDamageType    = $DamageType::Default;
 
    brickExplosionRadius = 0;
    brickExplosionImpact = true;          //destroy a brick if we hit it directly?
-   brickExplosionForce  = 10;
-   brickExplosionMaxVolume = 15;          //max volume of bricks that we can destroy
-   brickExplosionMaxVolumeFloating = 20;  //max volume of bricks that we can destroy if they aren't connected to the ground
+   brickExplosionForce  = 0;
+   brickExplosionMaxVolume = 0;          //max volume of bricks that we can destroy
+   brickExplosionMaxVolumeFloating = 0;  //max volume of bricks that we can destroy if they aren't connected to the ground
 
-   impactImpulse	     = 400;
-   verticalImpulse	  = 300;
+   impactImpulse	     = 100;
+   verticalImpulse	  = 0;
    explosion           = GunExplosion;
    particleEmitter     = GatlingTrailEmitter;
 
-   muzzleVelocity      = 180;
+   muzzleVelocity      = 100;
    velInheritFactor    = 1;
 
    armingDelay         = 00;
-   lifetime            = 4000;
-   fadeDelay           = 3500;
+   lifetime            = 6000;
+   fadeDelay           = 5500;
    bounceElasticity    = 0.5;
    bounceFriction      = 0.20;
    isBallistic         = false;

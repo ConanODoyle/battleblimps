@@ -76,5 +76,6 @@ function onTurretImageReload(%image, %obj, %slot)
 
 forceRequiredAddon("Weapon_Gun");
 forceRequiredAddon("Vehicle_Tank");
+forceRequiredAddon("Vehicle_Pirate_Cannon");
 exec("./gatling.cs");
 exec("./cannons.cs");
