@@ -171,18 +171,15 @@ function planeControlTick(%plane, %cl)
 	%driftFactor 			= %plane.driftFactor;
 
 	//update plane rotation
-	if (!%cl.planeFreelook)
+	if (!%cl.aircraftFreeLook)
 	{
 		// %flatvec = vectorNormalize(getWords(%cl.camera.getEyeVector(), 0, 1));
 		%eyeVec = %cl.camera.getEyeVector();
 		%plane.setAimVector(%eyeVec);
-		//prevents rotation updates not being sent to client due to slow turns
-		%plane.addVelocity("0 0 0.01");
-		%plane.addVelocity("0 0 -0.01");
 	}
 	else
 	{
-		%plane.clearAim();
+		// %plane.clearAim();
 	}
 
 	//move plane
@@ -321,9 +318,18 @@ function GameConnection::centerprintPlaneControl(%cl)
 	%format = "<just:right><font:Consolas:18>";
 	%throttle = "\c5Throttle: \c6[\c2" @ trim(%forward @ %backward @ %up @ %down @ %none) @ "\c6]";
 	%speedometer = "\c5Speed: \c6[\c5" @ %minSpeed @ "\c6|\c2 " @ mFloor(%speed * 10 + 0.5) @ " \c6|\c5" @ %maxSpeed @ "\c6]";
-	%freelook = %freelook ? "\c0-FREELOOK ON-" : "";
+	%freelook = %freelook ? "\c0-FREELOOK ON- <br>" : "";
 	%rf = " <br>";
-	%cl.centerprint(%format @ %throttle @ %rf @ %speedometer @ %rf @ %vspeedometer @ %rf @ %freelook, 1);
+
+	for (%i = 0; %i < 4; %i++)
+	{
+		%image = %plane.getMountedImage(%i);
+		if (isObject(%image))
+		{
+			%ammo = %ammo @ "\c4" @ %image.item.uiname @ " \c6[\c3" @ %plane.gunLoaded[%image] + 0 @ "\c6]<br>";
+		}
+	}
+	%cl.centerprint(%format @ %throttle @ %rf @ %speedometer @ %rf @ %freelook @ %rf @ %ammo, 1);
 }
 
 package aircraftMovementPackage

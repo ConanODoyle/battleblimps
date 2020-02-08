@@ -1,3 +1,5 @@
+exec("./weapons/datablocks.cs");
+
 datablock PlayerData(TurretBaseArmor : PlayerStandardArmor)
 {
 	shapeFile = "./weapons/gunmount.dts";
@@ -18,6 +20,7 @@ function getTurret(%weapons)
 	{
 		dataBlock = TurretBaseArmor;
 		weaponCount = 0;
+		isTurret = 1;
 	};
 	%turret.kill();
 
@@ -37,7 +40,7 @@ function AIPlayer::updateWeaponTable(%turret, %weapons)
 	for (%i = 0; %i < getWordCount(%weapons); %i++)
 	{
 		%item = getWord(%Weapons, %i);
-		if (isObject(%item) && %item.getClassName() $= "ItemData")
+		if (%item.turretItem && %item.getClassName() $= "ItemData")
 		{
 			%turret.weapon[%turret.weaponCount] = %item;
 			%turret.weaponCount++;
@@ -76,7 +79,7 @@ function onTurretImageMount(%image, %obj, %slot)
 	%obj.maxYawSpeed = %image.maxYawSpeed !$= "" ? %image.maxYawSpeed : %obj.maxYawSpeed;
 	%obj.maxPitchSpeed = %image.maxPitchSpeed !$= "" ? %image.maxPitchSpeed : %obj.maxPitchSpeed;
 
-	%obj.setImageLoaded(%slot, %obj.gunLoaded[%image.getID()]);
+	%obj.setImageLoaded(%slot, %obj.gunLoaded[%image.getID()] > 0);
 }
 
 function onTurretImageFire(%image, %obj, %slot)
@@ -113,7 +116,7 @@ function onTurretImageFire(%image, %obj, %slot)
 		%mat = MatrixCreateFromEuler(%x @ " " @ %y @ " " @ %z);
 		%velocity = MatrixMulVector(%mat, %velocity);
 
-		%p = new (%this.projectileType)()
+		%p = new (%image.projectileType)()
 		{
 			dataBlock = %projectile;
 			initialVelocity = %velocity;
@@ -125,12 +128,17 @@ function onTurretImageFire(%image, %obj, %slot)
 		MissionCleanup.add(%p);
 	}
 
-	%obj.gunLoaded[%image.getID()] = 0;
+	%obj.gunLoaded[%image.getID()]--;
+	if (%obj.gunLoaded[%image.getID()] <= 0)
+	{
+		%obj.setImageLoaded(%slot, 0);
+	}
 }
 
 function onTurretImageReload(%image, %obj, %slot)
 {
 	%obj.gunLoaded[%image.getID()] = 1;
+	%obj.setImageLoaded(%slot, 1);
 }
 
 
