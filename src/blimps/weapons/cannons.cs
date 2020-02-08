@@ -16,30 +16,33 @@ datablock ParticleData(TurretcannonBallTrailParticle)
 	animateTexture		= false;
 	//framesPerSec		= 1;
 
-	textureName		= "base/data/particles/dot";
+	textureName		= "base/data/particles/cloud";
 	//animTexName		= "~/data/particles/dot";
 
 	// Interpolation variables
-	colors[0]	= "0.2 0.2 0.2 0.1";
-	colors[1]	= "0.2 0.2 0.2 0.0";
-	sizes[0]	= 0.8;
-	sizes[1]	= 0.0;
+	colors[0]	= "1 0.4 0 0.9";
+	colors[1]	= "0.0 0.0 0.0 0.3";
+	colors[2]	= "0.2 0.2 0.2 0.0";
+	sizes[0]	= 0.3;
+	sizes[1]	= 0.2;
+	sizes[2]	= 0.2;
 	times[0]	= 0.0;
-	times[1]	= 1.0;
+	times[1]	= 0.4;
+	times[2]	= 1.0;
 };
 
-datablock ParticleEmitterData(TurretcannonBallTrailEmitter)
+datablock ParticleEmitterData(TurretCannonBallTrailEmitter)
 {
-   ejectionPeriodMS = 5;
+   ejectionPeriodMS = 25;
    periodVarianceMS = 0;
 
-   ejectionVelocity = 0; //0.25;
+   ejectionVelocity = 0.1; //0.25;
    velocityVariance = 0; //0.10;
 
    ejectionOffset = 0;
 
    thetaMin         = 0.0;
-   thetaMax         = 90.0;  
+   thetaMax         = 180.0;  
 
    particles = TurretcannonBallTrailParticle;
 
@@ -51,16 +54,16 @@ datablock ParticleEmitterData(TurretcannonBallTrailEmitter)
 datablock ParticleData(TurretCannonSmokeParticle)
 {
 	dragCoefficient      = 5;
-	gravityCoefficient   = -1;
-	inheritedVelFactor   = 0.6;
+	gravityCoefficient   = -0.1;
+	inheritedVelFactor   = 1;
 	constantAcceleration = 0.0;
-	lifetimeMS           = 1200;
-	lifetimeVarianceMS   = 600;
+	lifetimeMS           = 6200;
+	lifetimeVarianceMS   = 2600;
 	textureName          = "base/data/particles/cloud";
 	spinSpeed		= 0.0;
 	spinRandomMin		= -50.0;
 	spinRandomMax		= 50.0;
-	colors[0]     = "0.5 0.5 0.5 0.2";
+	colors[0]     = "0.2 0.2 0.2 0.2";
 	colors[1]     = "0.5 0.5 0.5 0.0";
 	sizes[0]      = 0.6;
 	sizes[1]      = 1;
@@ -70,13 +73,13 @@ datablock ParticleData(TurretCannonSmokeParticle)
 
 datablock ParticleEmitterData(TurretCannonSmokeEmitter)
 {
-   ejectionPeriodMS = 8;
-   periodVarianceMS = 4;
+   ejectionPeriodMS = 3;
+   periodVarianceMS = 0;
    ejectionVelocity = 6;
    velocityVariance = 5;
    ejectionOffset   = 0;
    thetaMin         = 0;
-   thetaMax         = 50;
+   thetaMax         = 20;
    phiReferenceVel  = 0;
    phiVariance      = 360;
    overrideAdvance = false;
@@ -86,26 +89,212 @@ datablock ParticleEmitterData(TurretCannonSmokeEmitter)
 };
 
 
+
+datablock ParticleData(TurretCannonExplosionParticle)
+{
+   dragCoefficient      = 8;
+   gravityCoefficient   = -1;
+   inheritedVelFactor   = 0.2;
+   constantAcceleration = 0.0;
+   lifetimeMS           = 1800;
+   lifetimeVarianceMS   = 600;
+   textureName          = "base/data/particles/cloud";
+   spinSpeed		= 10.0;
+   spinRandomMin		= -50.0;
+   spinRandomMax		= 50.0;
+   colors[0]     = "0.9 0.5 0.0 0.9";
+   colors[1]     = "0.0 0.0 0.0 0.9";
+   colors[2]     = "0.5 0.5 0.5 0.0";
+
+   sizes[0]      = 1.0;
+   sizes[1]      = 3.0;
+   sizes[2]      = 2.0;
+
+   times[0] = 0.0;
+   times[1] = 0.2;
+   times[2] = 1.0;
+
+   useInvAlpha = true;
+};
+datablock ParticleEmitterData(TurretCannonExplosionEmitter)
+{
+   ejectionPeriodMS = 3;
+   periodVarianceMS = 0;
+   ejectionVelocity = 5;
+   velocityVariance = 1.0;
+   ejectionOffset   = 0;
+   thetaMin         = 89;
+   thetaMax         = 90;
+   phiReferenceVel  = 0;
+   phiVariance      = 360;
+   overrideAdvance = false;
+   particles = "TurretCannonExplosionParticle";
+};
+
+datablock ParticleData(TurretCannonExplosionRingParticle)
+{
+   dragCoefficient      = 8;
+   gravityCoefficient   = -0.5;
+   inheritedVelFactor   = 0.2;
+   constantAcceleration = 0.0;
+   lifetimeMS           = 40;
+   lifetimeVarianceMS   = 10;
+   textureName          = "base/data/particles/star1";
+   spinSpeed		= 10.0;
+   spinRandomMin		= -500.0;
+   spinRandomMax		= 500.0;
+   colors[0]     = "1 0.5 0.0 0.5";
+   colors[1]     = "0.9 0.0 0.0 0.0";
+   sizes[0]      = 3;
+   sizes[1]      = 4;
+
+   useInvAlpha = false;
+};
+datablock ParticleEmitterData(TurretCannonExplosionRingEmitter)
+{
+   lifeTimeMS = 50;
+
+   ejectionPeriodMS = 1;
+   periodVarianceMS = 0;
+   ejectionVelocity = 5;
+   velocityVariance = 0.0;
+   ejectionOffset   = 0.0;
+   thetaMin         = 0;
+   thetaMax         = 180;
+   phiReferenceVel  = 0;
+   phiVariance      = 360;
+   overrideAdvance = false;
+   particles = "TurretCannonExplosionRingParticle";
+};
+
+
+datablock ParticleData(TurretCannonExplosionChunkParticle)
+{
+   dragCoefficient      = 0;
+   gravityCoefficient   = 3;
+   inheritedVelFactor   = 0.2;
+   constantAcceleration = 0.0;
+   lifetimeMS           = 1400;
+   lifetimeVarianceMS   = 1300;
+   textureName          = "base/data/particles/chunk";
+   spinSpeed		= 10.0;
+   spinRandomMin		= -500.0;
+   spinRandomMax		= 500.0;
+   colors[0]     = "0.1 0.1 0.1 0.5";
+   colors[1]     = "0.0 0.0 0.0 0.5";
+   sizes[0]      = 0.4;
+   sizes[1]      = 0;
+
+   useInvAlpha = true;
+};
+datablock ParticleEmitterData(TurretCannonExplosionChunkEmitter)
+{
+   lifeTimeMS = 25;
+
+   ejectionPeriodMS = 1;
+   periodVarianceMS = 0;
+   ejectionVelocity = 8;
+   velocityVariance = 0.0;
+   ejectionOffset   = 1.0;
+   thetaMin         = 0;
+   thetaMax         = 180;
+   phiReferenceVel  = 0;
+   phiVariance      = 360;
+   overrideAdvance = false;
+   particles = "TurretCannonExplosionChunkParticle";
+};
+
+
+datablock ParticleData(TurretCannonBallDebrisTrailParticle)
+{
+	dragCoefficient		= 3.0;
+	windCoefficient		= 0.0;
+	gravityCoefficient	= 0.0;
+	inheritedVelFactor	= 0.0;
+	constantAcceleration	= 0.0;
+	lifetimeMS		= 350;
+	lifetimeVarianceMS	= 0;
+	spinSpeed		= 10.0;
+	spinRandomMin		= -50.0;
+	spinRandomMax		= 50.0;
+	useInvAlpha		= false;
+	animateTexture		= false;
+	//framesPerSec		= 1;
+
+	textureName		= "base/data/particles/cloud";
+	//animTexName		= "~/data/particles/dot";
+
+	// Interpolation variables
+	colors[0]	= "1 0.4 0 0.9";
+	colors[1]	= "0.0 0.0 0.0 0.3";
+	colors[2]	= "0.2 0.2 0.2 0.0";
+	sizes[0]	= 0.3;
+	sizes[1]	= 0.2;
+	sizes[2]	= 0.2;
+	times[0]	= 0.0;
+	times[1]	= 0.4;
+	times[2]	= 1.0;
+};
+
+datablock ParticleEmitterData(TurretCannonBallDebrisTrailEmitter)
+{
+   ejectionPeriodMS = 10;
+   periodVarianceMS = 0;
+
+   ejectionVelocity = 0.1; //0.25;
+   velocityVariance = 0; //0.10;
+
+   ejectionOffset = 0;
+
+   thetaMin         = 0.0;
+   thetaMax         = 180.0;  
+
+   particles = TurretCannonBallDebrisTrailParticle;
+
+   useEmitterColors = true;
+   uiName = "";
+};
+
+
+
+datablock DebrisData(TurretCannonDebris)
+{
+   emitters = "TurretCannonBallDebrisTrailEmitter";
+
+	shapeFile = "base/data/shapes/empty.dts";
+	lifetime = 0.5;
+	minSpinSpeed = -300.0;
+	maxSpinSpeed = 300.0;
+	elasticity = 0.5;
+	friction = 0.2;
+	numBounces = 1;
+	staticOnMaxBounce = true;
+	snapOnMaxBounce = false;
+	fade = true;
+
+	gravModifier = 1;
+};
+
 datablock ExplosionData(TurretCannonBallExplosion)
 {
    lifeTimeMS = 150;
 
-   debris = tankShellDebris;
-   debrisNum = 30;
-   debrisNumVariance = 10;
+   debris = TurretCannonDebris;
+   debrisNum = 10;
+   debrisNumVariance = 5;
    debrisPhiMin = 0;
    debrisPhiMax = 360;
    debrisThetaMin = 0;
    debrisThetaMax = 180;
-   debrisVelocity = 80;
-   debrisVelocityVariance = 30;
+   debrisVelocity = 8;
+   debrisVelocityVariance = 3;
 
-   particleEmitter = gravityRocketExplosionEmitter;
-   particleDensity = 4;
-   particleRadius = 0.1;
+   particleEmitter = TurretCannonExplosionEmitter;
+   particleDensity = 10;
+   particleRadius = 0.01;
 
-   emitter[0] = gravityRocketExplosionRingEmitter;
-   emitter[1] = gravityRocketExplosionChunkEmitter;
+   emitter[0] = TurretCannonExplosionRingEmitter;
+   emitter[1] = TurretCannonExplosionChunkEmitter;
 
    faceViewer     = true;
    explosionScale = "1 1 1";
@@ -123,7 +312,7 @@ datablock ExplosionData(TurretCannonBallExplosion)
    lightEndColor = "1 0 0 0";
 
    damageRadius = 3;
-   radiusDamage = 5;
+   radiusDamage = 10;
 
    impulseRadius = 4;
    impulseForce = 2000;
@@ -155,7 +344,7 @@ datablock ProjectileData(TurretCannonBallProjectile)
 
    sound = WhistleLoopSound;
 
-   muzzleVelocity      = 50;
+   muzzleVelocity      = 10;
    velInheritFactor    = 1;
 
    armingDelay         = 0;
@@ -164,7 +353,7 @@ datablock ProjectileData(TurretCannonBallProjectile)
    bounceElasticity    = 0.5;
    bounceFriction      = 0.20;
    isBallistic         = true;
-   gravityMod = 1.0;
+   gravityMod = 0.2;
 
    hasLight    = false;
    lightRadius = 5.0;
@@ -179,21 +368,21 @@ datablock ItemData(SingleCannonTurretItem : ReferenceTurretItem)
 {
 	shapeFile = "./singlecannon.dts";
 	uiName = "SingleCannon";
-	image = "SingleCannonTurretImage";
+	image = "SingleCannonTurretImageA";
 };
 
-datablock ShapeBaseImageData(SingleCannonTurretImage)
+datablock ShapeBaseImageData(SingleCannonTurretImageA)
 {
 	item = SingleCannonTurretItem;
 	shapeFile = "./singlecannon.dts";
 	colorShiftColor = "1 1 1 1";
 
-	projectile = CannonProjectile;
+	projectile = TurretCannonBallProjectile;
 	projectileType = Projectile;
 	spread = 0.0003;
 	shellcount = 1;
-	chargeMax = 3000;
-	minCharge = 0.1;
+	chargeMax = 5000;
+	minCharge = 0.2;
 
 	mountPoint = 0;
 
@@ -210,6 +399,7 @@ datablock ShapeBaseImageData(SingleCannonTurretImage)
 	stateTransitionOnTriggerDown[2] = "Charge";
 
 	stateName[3] = "Charge";
+	stateScript[3] = "onCharge";
 	stateTransitionOnTriggerUp[3] = "Fire";
 
 	stateName[4] = "Fire";
@@ -225,44 +415,46 @@ datablock ShapeBaseImageData(SingleCannonTurretImage)
 	stateTransitionOnTimeout[5] = "FinishReload";
 	stateEmitter[5] = GatlingSmokeEmitter;
 	stateEmitterNode[5] = "muzzlePoint";
-	stateEmitterTime[5] = 5;
-	stateTimeoutValue[5] = 5;
+	stateEmitterTime[5] = 4;
+	stateTimeoutValue[5] = 4;
 
 	stateName[6] = "FinishReload";
 	stateScript[6] = "onFinishReload";
 	stateTransitionOnLoaded[6] = "AmmoCheck";
 };
 
-function SingleCannonTurretImage::onMount(%this, %obj, %slot)
+function SingleCannonTurretImageA::onMount(%this, %obj, %slot)
 {	
 	onTurretImageMount(%this, %obj, %slot);
 }
 
-function SingleCannonTurretImage::onCharge(%this, %obj, %slot)
+function SingleCannonTurretImageA::onCharge(%this, %obj, %slot)
 {
 	%obj.chargeStartTime = getSimTime();
 
 	if (isObject(%cl = %obj.client) || isObject(%cl = %obj.getControllingClient()))
 	{
-		centerprintChargeLoop(%cl, %obj, %this, %slot);
+		// centerprintChargeLoop(%cl, %obj, %this, %slot);
 	}
 }
 
-function SingleCannonTurretImage::onFire(%this, %obj, %slot)
+function SingleCannonTurretImageA::onFire(%this, %obj, %slot)
 {
 	if (!isObject(%obj.client) && !isObject(%obj.getControllingClient()))
 	{
 		%obj.unmountImage(%slot);
 		%obj.mountImage(%this, %slot);
 	}
-	%obj.chargeAmount = getMax(%this.minCharge, getMin((getSimTime() | 0 - %obj.chargeStartTime | 0) / %this.chargeMax, 1));
+	%diff = 1 - %this.minCharge;
+	%obj.chargeAmount = getMin((getSimTime() - %obj.chargeStartTime | 0) / %this.chargeMax, 1) * %diff + %this.minCharge;
 	onCannonTurretImageFire(%this, %obj, %slot);
+	%obj.chargeStartTime = "";
 }
 
-function SingleCannonTurretImage::onFinishReload(%this, %obj, %slot)
+function SingleCannonTurretImageA::onFinishReload(%this, %obj, %slot)
 {	
 	onTurretImageReload(%this, %obj, %slot);
-	%obj.gunLoaded[%this.getID()] = 20;
+	%obj.gunLoaded[%this.getID()] = 1;
 }
 
 function onCannonTurretImageFire(%image, %obj, %slot)
@@ -307,7 +499,7 @@ function onCannonTurretImageFire(%image, %obj, %slot)
 
 function centerprintChargeLoop(%cl, %obj, %image, %slot)
 {
-	cancel(%cl.centerprintChargeLoop)
+	cancel(%cl.centerprintChargeLoop);
 
 	if ((%obj.getControllingClient() != %cl && %obj.client != %cl) || !isObject(%obj) || %obj.getMountedImage(%slot) != %image)
 	{
@@ -315,10 +507,11 @@ function centerprintChargeLoop(%cl, %obj, %image, %slot)
 	}
 
 	%format = "<just:right><font:Consolas:22>\c5";
-	%amt = getMax(%image.minCharge, getMin((getSimTime() | 0 - %obj.chargeStartTime | 0) / %image.chargeMax, 1));
-	%velocity = %image.projectile.muzzleVelocity * %amt;
+	%diff = 1 - %image.minCharge;
+	%amt = getMin((getSimTime() - %obj.chargeStartTime | 0) / %image.chargeMax, 1);
+	%velocity = %image.projectile.muzzleVelocity * (%amt * %diff + %image.minCharge);
 	%rf = " <br>";
-	%cl.centerprint(%format @ "Charge: \c6[\c2" @ mFloor(%amt * 1000 + 0.5) / 10 @ "%\c6]" @ %rf @ "\c5Speed: \c6[\c2" @ %velocity @ " \c6|\c5" @ %image.projectile.muzzleVelocity @ "\c6]");
+	%cl.centerprint(%format @ "Charge: \c6[\c2" @ mFloor(%amt * 100) @ "%\c6]" @ %rf @ "\c5Speed: \c6[\c2" @ %velocity @ " \c6|\c5" @ %image.projectile.muzzleVelocity @ "\c6]");
 	
 	%cl.centerprintChargeLoop = schedule(1, %cl, centerprintChargeLoop, %cl, %obj, %image, %slot);
 }

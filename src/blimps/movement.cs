@@ -328,6 +328,14 @@ function GameConnection::centerprintPlaneControl(%cl)
 		{
 			%ammo = %ammo @ "\c4" @ %image.item.uiname @ " \c6[\c3" @ %plane.gunLoaded[%image] + 0 @ "\c6]<br>";
 		}
+		if (%image.minCharge > 0 && %plane.chargeStartTime !$= "")
+		{
+			%diff = 1 - %image.minCharge;
+			%amt = getMin((getSimTime() - %plane.chargeStartTime | 0) / %image.chargeMax, 1);
+			%velocity = mFloor(%image.projectile.muzzleVelocity * (%amt * %diff + %image.minCharge) * 10) / 10;
+			%ammo = %ammo @ "\c5Charge: \c6[\c2" @ mFloor(%amt * 100) @ "%\c6]" @ %rf 
+			@ "\c5Speed: \c6[\c2" @ %velocity @ " \c6|\c5" @ %image.projectile.muzzleVelocity @ "\c6]<br>";
+		}
 	}
 	%cl.centerprint(%format @ %throttle @ %rf @ %speedometer @ %rf @ %freelook @ %rf @ %ammo, 1);
 }

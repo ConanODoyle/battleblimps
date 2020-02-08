@@ -7,10 +7,10 @@ datablock ParticleData(GatlingTrailParticle)
 {
 	dragCoefficient      = 3;
 	gravityCoefficient   = -0.0;
-	inheritedVelFactor   = 1.0;
+	inheritedVelFactor   = 0.5;
 	constantAcceleration = 0.0;
-	lifetimeMS           = 525;
-	lifetimeVarianceMS   = 55;
+	lifetimeMS           = 200;
+	lifetimeVarianceMS   = 0;
 	textureName          = "base/data/particles/dot";
 	spinSpeed		= 10.0;
 	spinRandomMin		= -500.0;
@@ -22,7 +22,7 @@ datablock ParticleData(GatlingTrailParticle)
 	sizes[1]      = 0.06;
 	sizes[2]	  = 0.04;
 	times[0]      = 0.0;
-	times[1]	  = 0.9;
+	times[1]	  = 0.3;
 	times[2]      = 1.0;
 
 	useInvAlpha = false;
@@ -61,7 +61,7 @@ datablock ProjectileData(GatlingProjectile)
    explosion           = GunExplosion;
    particleEmitter     = GatlingTrailEmitter;
 
-   muzzleVelocity      = 100;
+   muzzleVelocity      = 30;
    velInheritFactor    = 1;
 
    armingDelay         = 00;
