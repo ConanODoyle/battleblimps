@@ -45,7 +45,7 @@ datablock ParticleEmitterData(GatlingTrailEmitter)
 
 datablock ProjectileData(GatlingProjectile)
 {
-   projectileShapeName = "./empty.dts";
+   projectileShapeName = "base/data/shapes/empty.dts";
    directDamage        = 1;
    directDamageType    = $DamageType::Default;
    radiusDamageType    = $DamageType::Default;
