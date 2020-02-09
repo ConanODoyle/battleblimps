@@ -17,7 +17,7 @@ function onTurretImageMount(%image, %obj, %slot)
 
 function onTurretImageFire(%image, %obj, %slot)
 {
-	%cl = %obj.getMountedObject(0).client;
+	%cl = %obj;
 
 	%projectile = %image.projectile;
 	%spread = %image.spread;

@@ -15,6 +15,7 @@ function GameConnection::controlAircraft(%cl, %aircraft)
 	%cl.controllingAircraft = %aircraft;
 	%cl.upMovement = %cl.downMovement = %cl.forwardMovement = %cl.backMovement = 0;
 	%aircraft.lastMoved = getSimTime();
+	%aircraft.gainedControl = getSimTime();
 
 	if (%aircraft.isBlimp)
 	{
@@ -170,6 +171,12 @@ function planeControlTick(%plane, %cl)
 	%minSpeed 				= %plane.minSpeed;
 	%driftFactor 			= %plane.driftFactor;
 
+	if (vectorLen(%originalVelocity) <= %minSpeed / 2 && getSimTime() - %plane.gainedControl > 1000)
+	{
+		%plane.spawnExplosion("cannonBallProjectile", "0.2");
+		%cl.centerprint("");
+		return;
+	}
 	//update plane rotation
 	if (!%cl.aircraftFreeLook)
 	{

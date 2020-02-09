@@ -7,6 +7,8 @@ datablock PlayerData(BlimpArmor : PlayerStandardArmor)
 	maxBackwardSpeed = 2;
 	maxSideSpeed = 0;
 
+	maxDamage = 500;
+
 	boundingBox = vectorScale("2 2 2.8", 4);
 };
 
@@ -53,8 +55,8 @@ function getBlimp()
 		downAcceleration = -1;
 		forwardAcceleration = 1.2;
 		backwardAcceleration = -0.7;
-		maxHorizontalSpeed = 4;
-		maxVerticalSpeed = 1;
+		maxHorizontalSpeed = 8;
+		maxVerticalSpeed = 4;
 
 		cameraDistance = 10;
 
@@ -162,7 +164,7 @@ function serverCmdGetPlane(%cl)
 	%cl.controlAircraft(%cl.aircraft);
 }
 
-package disableAircraftCrouchedDamage
+package AircraftBasePackage
 {
 	function AIPlayer::isCrouched(%pl)
 	{
@@ -172,5 +174,17 @@ package disableAircraftCrouchedDamage
 		}
 		return parent::isCrouched(%pl);
 	}
+
+	function Armor::onDisabled(%this, %obj, %state)
+	{
+		%ret = parent::onDisabled(%this, %obj, %state);
+
+		if (%obj.isAircraft)
+		{
+			%obj.burn(10);
+		}
+
+		return %ret;
+	}
 };
-activatePackage(disableAircraftCrouchedDamage);
+activatePackage(AircraftBasePackage);

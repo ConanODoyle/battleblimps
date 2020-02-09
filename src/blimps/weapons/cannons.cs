@@ -315,7 +315,7 @@ datablock ExplosionData(TurretCannonBallExplosion)
    radiusDamage = 10;
 
    impulseRadius = 4;
-   impulseForce = 2000;
+   impulseForce = 500;
 
    playerBurnTime = 0;
 };
@@ -331,7 +331,7 @@ datablock ProjectileData(TurretCannonBallProjectile)
    directDamage        = 20;
    directDamageType = $DamageType::CannonBallDirect;
    radiusDamageType = $DamageType::CannonBallRadius;
-   impactImpulse	   = 1000;
+   impactImpulse	   = 200;
    verticalImpulse	   = 0;
    explosion           = TurretCannonBallExplosion;
    particleEmitter     = TurretCannonBallTrailEmitter;
@@ -459,7 +459,7 @@ function SingleCannonTurretImageA::onFinishReload(%this, %obj, %slot)
 
 function onCannonTurretImageFire(%image, %obj, %slot)
 {
-	%cl = %obj.getMountedObject(0).client;
+	%cl = %obj;
 
 	%projectile = %image.projectile;
 	%spread = %image.spread;
