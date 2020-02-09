@@ -20,6 +20,7 @@ datablock PlayerData(ScoutBlimpArmor : BlimpArmor)
 	maxSideSpeed = 0;
 
 	boundingBox = vectorScale("1.5 1.5 2.8", 4);
+	crouchboundingBox = vectorScale("1.5 1.5 2.8", 4);
 };
 
 datablock PlayerData(BuzzerPlaneArmor : BlimpArmor)
@@ -31,12 +32,13 @@ datablock PlayerData(BuzzerPlaneArmor : BlimpArmor)
 	maxBackwardSpeed = 2;
 	maxSideSpeed = 0;
 
-	boundingBox = vectorScale("1.3 1.3 1.5", 4);
+	boundingBox = vectorScale("1 1 1", 4);
+	crouchBoundingBox = vectorScale("1 1 1", 4);
 };
 
-if (!isObject(BlimpSimSet))
+if (!isObject(AircraftSimSet))
 {
-	$BlimpSimSet = new SimSet(BlimpSimSet);
+	$AircraftSimSet = new SimSet(AircraftSimSet);
 }
 
 function getBlimp()
@@ -45,6 +47,7 @@ function getBlimp()
 	{
 		dataBlock = BlimpArmor;
 		isBlimp = 1;
+		isAircraft = 1;
 
 		upAcceleration = 1;
 		downAcceleration = -1;
@@ -67,7 +70,7 @@ function getBlimp()
 	%blimp.unhideNode("e_Sl_prop");
 	%blimp.unhideNode("e_Sr");
 	%blimp.unhideNode("e_Sl");
-	$BlimpSimSet.add(%blimp);
+	$AircraftSimSet.add(%blimp);
 	return %blimp;
 }
 
@@ -90,15 +93,10 @@ function getPlane(%type)
 	{
 		dataBlock = BuzzerPlaneArmor;
 		isPlane = 1;
+		isAircraft = 1;
 
-		// upAcceleration = 0;
-		// downAcceleration = 0;
-		// forwardAcceleration = 0;
-		// backwardAcceleration = 0;
-		// maxHorizontalSpeed = 10;
-		// maxVerticalSpeed = 10;
 		maxVerticalSpeed = 2;
-		maxSpeed = 10;
+		maxSpeed = 12;
 		minSpeed = 2;
 		maxUpSpeed = 3;
 		eyeAcceleration = 2.5;
@@ -107,7 +105,7 @@ function getPlane(%type)
 		cameraDistance = 4;
 
 		driftFactor = 0.5;
-		maxYawSpeed = 5;
+		maxYawSpeed = 2;
 	};
 	%buzzer.hideNode("ALL");
 	%buzzer.unhideNode(%type);
@@ -115,7 +113,7 @@ function getPlane(%type)
 	{
 		%buzzer.unhideNode(getWord(%engine, %i));
 	}
-	$BlimpSimSet.add(%buzzer);
+	$AircraftSimSet.add(%buzzer);
 	return %buzzer;
 }
 
@@ -163,3 +161,16 @@ function serverCmdGetPlane(%cl)
 	%cl.aircraft.setNodeColor("ALL", %cl.chestcolor);
 	%cl.controlAircraft(%cl.aircraft);
 }
+
+package disableAircraftCrouchedDamage
+{
+	function AIPlayer::isCrouched(%pl)
+	{
+		if (%pl.isAircraft)
+		{
+			return 0;
+		}
+		return parent::isCrouched(%pl);
+	}
+};
+activatePackage(disableAircraftCrouchedDamage);
