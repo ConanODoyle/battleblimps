@@ -37,7 +37,17 @@ function drawLine(%pos1, %pos2, %color, %scale, %offset)
 	return %shape;
 }
 
-function drawArrow(%pos, %vec, %color, %length, %offset)
+function drawArrow(%pos, %vec, %color, %length, %scale, %offset)
+{
+	%shape = getShapelineShape("arrow");
+	%shape.isLine = 1;
+	%pos1 = %pos;
+	%pos2 = vectorAdd(vectorScale(%vec, %length), %pos);
+	%shape.drawLine(%pos1, %pos2, %color, %scale, %offset);
+	return %shape;
+}
+
+function drawArrow2(%start, %end, %color, %scale, %offset)
 {
 	%shape = getShapelineShape("arrow");
 	%shape.isLine = 1;

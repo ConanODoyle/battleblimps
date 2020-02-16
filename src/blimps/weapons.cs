@@ -11,7 +11,7 @@ datablock PlayerData(TurretBaseArmor : PlayerStandardArmor)
 
 	keepOnDeath = 1;
 
-	boundingBox = vectorScale("20 20 20", 4);
+	boundingBox = vectorScale("0.25 0.25 0.25", 4);
 };
 
 function getTurret(%weapons)
@@ -51,40 +51,44 @@ function AIPlayer::updateWeaponTable(%turret, %weapons)
 	{
 		%turret.mountImage(%turret.weapon0.image, 0);
 	}
+}
 
-	if (isObject(%turret.getControllingClient()))
+function getClampedAimVector(%turret, %target)
+{
+	%correctVec = correctMountedAimVector(%turret, %target, 1);
+	if (!isObject(%turret.getObjectMount()))
 	{
-		// sendWeaponTable(%turret.getControllingClient(), %turret);
+		return %correctVec;
+	}
+	%xy = getWords(%correctVec, 0, 1);
+	%z = getWord(%correctVec, 2);
+	%baseVec = %turret.getBaseVector();
+
+	if (mACos(vectorDot(vectorNormalize(%xy), %baseVec)) > %turret.maxSideAngle)
+	{
+		%left = vectorCross("0 0 1", vectorNormalize(%xy));
+		%proj = vectorDot(%left, %xy);
+		if (%proj > 0) //on left
+		{
+			%newxy = vectorScale(bb_vectorRotate(vectorNormalize(getWords(%baseVec, 0, 1)), "0 0 1", %turret.maxSideAngle), vectorLen(%xy));
+		}
+		else //on right
+		{
+			%newxy = vectorScale(bb_vectorRotate(vectorNormalize(getWords(%baseVec, 0, 1)), "0 0 1", -1 * %turret.maxSideAngle), vectorLen(%xy));
+		}
 	}
 }
 
-function GameConnection::controlTurret(%cl, %turret)
-{
-	// if (!%cl.controllingTurret || %cl.camera.isSpying != %turret)
-	// {
-	// 	%cl.setControlObject(%cl.camera); //must be first - pkg resetCamera resets subsequent lines
-
-	// 	%cl.camera.setControlObject(%cl.camera);
-	// 	%dist = %turret.cameraDistance > 0 ? %turret.cameraDistance : 10;
-	// 	%cl.camera.schedule(1, setOrbitMode, %turret, %turret.getTransform(), 0, %dist, %dist, 1);
-	// 	%cl.camera.isSpying = %turret;
-	// 	%cl.camera.mode = "Orbit";
-	// }
-	%cl.setControlObject(%turret);
-	//sendWeaponTable(%cl, %turret);
-}
-
-
 package BattleBlimps_KeepOnDeath
 {
-	function Armor::onDisabled(%this, %obj, %state)
+	function Player::removeBody(%obj)
 	{
-		if (%this.keepOnDeath)
+		if (%obj.getDatablock().keepOnDeath)
 		{
 			return;
 		}
 
-		return parent::onDisabled(%this, %obj);
+		return parent::removeBody(%obj);
 	}
 
 	function Armor::onMount(%this, %obj, %vehicle, %node)
@@ -120,7 +124,5 @@ package BattleBlimps_KeepOnDeath
 			%obj.setLookLimits(%vehicle.getDataBlock().lookUpLimit, %vehicle.getDataBlock().lookDownLimit);
 		}
 	}
-
-
 };
 activatePackage(BattleBlimps_KeepOnDeath);
